@@ -15,8 +15,8 @@ const app = express();
 // =======================
 // 🛡️ SECURITY MIDDLEWARE
 // =======================
-app.use(helmet());
-app.use(cors());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // Rate limiting disabled per user request
