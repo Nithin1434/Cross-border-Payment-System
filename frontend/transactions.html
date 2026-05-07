@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFlow | Transactions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020617;
+      --bg-accent: #0f172a;
+      --primary: #0ea5e9;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+      --success: #34d399;
+      --failed: #f87171;
+      --pending: #fbbf24;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #020617;
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Mesh Gradients */
+    .mesh-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
+    .mesh-blob { position: absolute; border-radius: 50%; filter: blur(140px); animation: float 15s infinite ease-in-out alternate; opacity: 0.45; }
+    .mesh-1 { background: linear-gradient(135deg, #0ea5e9, #38bdf8); width: 600px; height: 600px; top: -100px; right: -100px; }
+    .mesh-2 { background: linear-gradient(135deg, #6366f1, #a855f7); width: 500px; height: 500px; bottom: -100px; left: -50px; animation-delay: -5s; }
+    @keyframes float { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -40px) scale(1.05); } 100% { transform: translate(-20px, 30px) scale(0.95); } }
+
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; padding: 20px 40px;
+      background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 50;
+    }
+    .header-title {
+      display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg, #fff, var(--primary));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-btn {
+      padding: 10px 18px; border-radius: 10px; border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05); color: white; font-weight: 600; cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 13px;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateY(-2px); }
+    .btn-logout { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.15); }
+
+    .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+
+    /* Filters */
+    .filter-bar {
+      display: flex; gap: 12px; margin-bottom: 24px; animation: slideUp 0.6s ease-out;
+    }
+    .filter-input {
+      flex: 1; padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.3); color: white; outline: none; transition: all 0.3s;
+    }
+    .filter-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15); }
+
+    #list { display: flex; flex-direction: column; gap: 14px; }
+
+    .tx-card {
+      background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 22px 28px;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideUp 0.6s ease-out backwards;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .tx-card:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.05); border-color: var(--primary); }
+
+    .tx-info { display: flex; flex-direction: column; gap: 6px; }
+    .tx-desc { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+    .credit { color: var(--success); }
+    .debit { color: #fff; }
+    .tx-meta { display: flex; gap: 12px; align-items: center; font-size: 12px; color: #64748b; font-weight: 600; }
+    .tag { padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); }
+
+    .status-badge {
+      padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+    }
+    .status-SUCCESS { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-FAILED  { background: rgba(239, 68, 68, 0.1); color: var(--failed); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-PROCESSING { background: rgba(245, 158, 11, 0.1); color: var(--pending); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .empty { text-align: center; margin-top: 80px; color: #64748b; font-weight: 500; font-size: 16px; }
+
+    /* Receipt Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal {
+      background: #0f172a; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px; padding: 40px; width: 100%; max-width: 440px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+      animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 24px; text-align: center; color: var(--primary); }
+    .receipt-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: #94a3b8; }
+    .receipt-row strong { color: #fff; font-weight: 700; }
+    .receipt-divider { border: 0; border-top: 1px dashed rgba(255,255,255,0.1); margin: 20px 0; }
+    .close-btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; font-weight: 700; cursor: pointer; margin-top: 20px; transition: all 0.2s; }
+    .close-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+
+    @media (max-width: 600px) { .tx-card { flex-direction: column; align-items: flex-start; gap: 14px; } .topbar { padding: 15px 20px; } }
+  </style>
+</head>
+<body>
+
+<div class="mesh-bg">
+  <div class="mesh-blob mesh-1"></div>
+  <div class="mesh-blob mesh-2"></div>
+</div>
+
+<div class="topbar">
+  <div class="header-title"><span>📄</span> Transactions</div>
+  <div style="display:flex; gap:10px;">
+    <button class="nav-btn" onclick="exportCSV()" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3); color: #34d399;">📥 Export</button>
+    <button class="nav-btn" onclick="window.location.href='home.html'">⬅ Dashboard</button>
+    <button class="nav-btn btn-logout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="filter-bar">
+    <input id="searchInput" class="filter-input" type="text" placeholder="Search recipients, IDs..." oninput="loadTransactions()">
+    <select id="statusFilter" class="filter-input" style="flex:0; min-width: 140px;" onchange="loadTransactions()">
+      <option value="ALL">All Status</option>
+      <option value="SUCCESS">Success</option>
+      <option value="FAILED">Failed</option>
+      <option value="PROCESSING">Processing</option>
+    </select>
+  </div>
+
+  <div id="list">
+     <!-- List -->
+  </div>
+</div>
+
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal">
+    <h2>Transaction Receipt</h2>
+    <div id="receiptContent"></div>
+    <button class="close-btn" onclick="document.getElementById('receiptModal').style.display='none'">Close</button>
+  </div>
+</div>
+
+<script>
+const token = sessionStorage.getItem("token");
+if (!token) window.location.href = "index.html";
+
+function logout() { sessionStorage.removeItem("token"); window.location.href = "index.html"; }
+
+async function loadTransactions() {
+  try {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    let url = `http://localhost:3001/transactions?status=${status}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+
+    const res = await fetch(url, { headers: { "Authorization": "Bearer " + token } });
+    const data = await res.json();
+    const list = document.getElementById("list");
+
+    if (!data || data.length === 0) {
+      list.innerHTML = `<p class="empty">No transactions found matching your filters.</p>`;
+      return;
+    }
+
+    list.innerHTML = "";
+    data.forEach((tx, i) => {
+      const s = (tx.status || "PROCESSING").toUpperCase();
+      const time = tx.createdAt ? new Date(tx.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "N/A";
+      
+      let text = "";
+      let typeClass = "";
+      if (tx.type === "CREDIT") {
+        text = `+${tx.convertedAmount.toLocaleString()} ${tx.convertedCurrency} from ${tx.from || 'System'}`;
+        typeClass = "credit";
+      } else {
+        text = `-${tx.amount.toLocaleString()} ${tx.currency} to ${tx.recipientName || tx.to || 'SWIFT'}`;
+        typeClass = "debit";
+      }
+
+      const card = document.createElement('div');
+      card.className = 'tx-card';
+      card.style.animationDelay = `${i * 0.05}s`;
+      card.onclick = () => showReceipt(tx);
+      card.innerHTML = `
+        <div class="tx-info">
+          <div class="tx-desc ${typeClass}">${text}</div>
+          <div class="tx-meta">
+            <span>🕒 ${time}</span>
+            <span class="tag">${tx.purpose || 'General'}</span>
+          </div>
+        </div>
+        <div class="status-badge status-${s}">${s}</div>
+      `;
+      list.appendChild(card);
+    });
+  } catch (err) { console.error(err); }
+}
+
+function showReceipt(tx) {
+  const content = document.getElementById("receiptContent");
+  const time = tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A";
+  content.innerHTML = `
+    <div class="receipt-row"><span>ID:</span><strong>${tx.txId || 'N/A'}</strong></div>
+    <div class="receipt-row"><span>Timestamp:</span><strong>${time}</strong></div>
+    <div class="receipt-row"><span>Status:</span><strong style="color:var(--primary)">${(tx.status||'PROCESSING').toUpperCase()}</strong></div>
+    <div class="receipt-divider"></div>
+    ${(tx.recipientAccountNumber || tx.recipientSwiftCode) ? `
+      <div class="receipt-row"><span>Recipient:</span><strong>${tx.recipientName || tx.to}</strong></div>
+      <div class="receipt-row"><span>Account:</span><strong>${tx.recipientAccountNumber}</strong></div>
+      <div class="receipt-row"><span>SWIFT:</span><strong>${tx.recipientSwiftCode}</strong></div>
+      <div class="receipt-divider"></div>
+    ` : ''}
+    <div class="receipt-row"><span>Sent:</span><strong>${tx.amount} ${tx.currency}</strong></div>
+    <div class="receipt-row"><span>Received:</span><strong style="font-size:18px; color:#fff">${tx.convertedAmount} ${tx.convertedCurrency}</strong></div>
+  `;
+  document.getElementById("receiptModal").style.display = "flex";
+}
+
+async function exportCSV() {
+  try {
+    const res = await fetch("http://localhost:3001/transactions/export", { headers: { "Authorization": "Bearer " + token } });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Statement_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) { alert("Export failed"); }
+}
+
+setInterval(loadTransactions, 8000);
+loadTransactions();
+</script>
+</body>
+</html>

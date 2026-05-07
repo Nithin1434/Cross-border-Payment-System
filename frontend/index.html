@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFlow | Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020617;
+      --primary: #0ea5e9;
+      --primary-hover: #38bdf8;
+      --glass-bg: rgba(15, 23, 42, 0.35);
+      --glass-border: rgba(255, 255, 255, 0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #020617;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Three.js Canvas */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* Card with 3D perspective */
+    .card-wrapper {
+      perspective: 1200px;
+      z-index: 10;
+      position: relative;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      padding: 50px 48px;
+      border-radius: 28px;
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--glass-border);
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow:
+        0 30px 60px -15px rgba(0, 0, 0, 0.8),
+        0 0 80px -20px rgba(14, 165, 233, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transform-style: preserve-3d;
+      transition: transform 0.1s ease-out, box-shadow 0.3s ease;
+      transform: translateY(40px) rotateX(5deg);
+      opacity: 0;
+      animation: cardEntry 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    }
+
+    @keyframes cardEntry {
+      to { transform: translateY(0) rotateX(0deg); opacity: 1; }
+    }
+
+    /* Holographic border glow */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 30px;
+      background: conic-gradient(from 0deg, #0ea5e9, #8b5cf6, #d946ef, #10b981, #0ea5e9);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.5s;
+      filter: blur(8px);
+    }
+    .card:hover::before { opacity: 0.4; }
+
+    /* Inner elements float in 3D */
+    .logo-container {
+      margin-bottom: 36px;
+      transform: translateZ(40px);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #94a3b8, #0ea5e9);
+      background-size: 200% 200%;
+      animation: gradientShift 4s ease infinite;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .logo-icon {
+      font-size: 44px;
+      margin-bottom: 12px;
+      display: inline-block;
+      filter: drop-shadow(0 0 25px rgba(14, 165, 233, 0.8));
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { transform: translateY(0) rotateY(0deg); }
+      50% { transform: translateY(-8px) rotateY(15deg); }
+    }
+
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 15px;
+      margin-top: 8px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+      text-align: left;
+      transform: translateZ(20px);
+    }
+
+    input {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    input::placeholder { color: #64748b; font-weight: 400; }
+
+    input:focus {
+      border-color: #38bdf8;
+      background: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12), 0 0 30px -5px rgba(14, 165, 233, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px) scale(1.01);
+    }
+
+    /* 3D Button */
+    .btn-3d {
+      width: 100%;
+      padding: 18px;
+      margin-top: 16px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      font-weight: 800;
+      font-size: 17px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transform: translateZ(30px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow:
+        0 8px 0 0 #3730a3,
+        0 12px 25px -5px rgba(14, 165, 233, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-3d:hover {
+      transform: translateZ(30px) translateY(-2px);
+      box-shadow:
+        0 10px 0 0 #3730a3,
+        0 20px 35px -10px rgba(99, 102, 241, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-3d:active {
+      transform: translateZ(30px) translateY(2px);
+      box-shadow:
+        0 4px 0 0 #3730a3,
+        0 6px 15px -5px rgba(14, 165, 233, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    /* Shine sweep */
+    .btn-3d::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent);
+      transform: skewX(-20deg);
+    }
+    .btn-3d:hover::after { animation: shine 1s; }
+
+    @keyframes shine { 100% { left: 200%; } }
+
+    .footer-text {
+      margin-top: 32px;
+      font-size: 14px;
+      color: #94a3b8;
+      transform: translateZ(10px);
+    }
+
+    a {
+      color: var(--primary-hover);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    a:hover { color: white; text-shadow: 0 0 12px rgba(56, 189, 248, 0.5); }
+
+    #errorMsg {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 12px;
+      font-weight: 500;
+      min-height: 20px;
+      transform: translateZ(15px);
+    }
+
+    .btn-content { display: inline-block; }
+    .loader {
+      display: none;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Floating particles overlay */
+    .particle {
+      position: fixed;
+      width: 3px; height: 3px;
+      background: rgba(14, 165, 233, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- Floating sparkle particles -->
+<div id="particles"></div>
+
+<div class="card-wrapper">
+  <div class="card" id="loginCard">
+    <div class="logo-container">
+      <span class="logo-icon">💸</span>
+      <h1>PayFlow</h1>
+      <p class="subtitle">Secure Cross-Border Transfers</p>
+    </div>
+
+    <div class="input-group">
+      <input id="username" placeholder="Username" autocomplete="username">
+    </div>
+    <div class="input-group">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    </div>
+
+    <button class="btn-3d" id="loginBtn" onclick="login()">
+      <span class="btn-content" id="btnContent">Sign In</span>
+      <div class="loader" id="btnLoader"></div>
+    </button>
+
+    <div id="errorMsg"></div>
+
+    <p class="footer-text">
+      New to PayFlow? <a href="register.html">Create an account</a>
+    </p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ==========================================
+// 🌐 THREE.JS — 3D PARTICLE GLOBE
+// ==========================================
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  camera.position.z = 3.5;
+
+  // Globe particles
+  const count = 2000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+
+  for (let i = 0; i < count; i++) {
+    const phi = Math.acos(2 * Math.random() - 1);
+    const theta = 2 * Math.PI * Math.random();
+    const r = 1.2 + Math.random() * 0.15;
+    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = r * Math.cos(phi);
+
+    const color = new THREE.Color();
+    color.setHSL(0.55 + Math.random() * 0.1, 0.8, 0.5 + Math.random() * 0.3);
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const mat = new THREE.PointsMaterial({ size: 0.015, vertexColors: true, transparent: true, opacity: 0.8 });
+  const globe = new THREE.Points(geo, mat);
+  scene.add(globe);
+
+  // Connection lines
+  const lineGeo = new THREE.BufferGeometry();
+  const linePositions = [];
+  for (let i = 0; i < count; i++) {
+    for (let j = i + 1; j < Math.min(i + 5, count); j++) {
+      const dx = positions[i*3] - positions[j*3];
+      const dy = positions[i*3+1] - positions[j*3+1];
+      const dz = positions[i*3+2] - positions[j*3+2];
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      if (dist < 0.25) {
+        linePositions.push(positions[i*3], positions[i*3+1], positions[i*3+2]);
+        linePositions.push(positions[j*3], positions[j*3+1], positions[j*3+2]);
+      }
+    }
+  }
+  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.08 });
+  const lines = new THREE.LineSegments(lineGeo, lineMat);
+  scene.add(lines);
+
+  // Orbiting rings
+  for (let i = 0; i < 3; i++) {
+    const ringGeo = new THREE.RingGeometry(1.4 + i * 0.15, 1.41 + i * 0.15, 80);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.06, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2 + i * 0.3;
+    ring.rotation.y = i * 0.5;
+    scene.add(ring);
+  }
+
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    globe.rotation.y += 0.002;
+    lines.rotation.y += 0.002;
+    globe.rotation.x += (mouseY * 0.1 - globe.rotation.x) * 0.02;
+    globe.rotation.y += (mouseX * 0.1) * 0.01;
+    lines.rotation.x = globe.rotation.x;
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+
+// ==========================================
+// 🃏 3D CARD TILT
+// ==========================================
+const card = document.getElementById('loginCard');
+const wrapper = document.querySelector('.card-wrapper');
+
+wrapper.addEventListener('mousemove', (e) => {
+  const rect = wrapper.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  const rotateX = ((y - centerY) / centerY) * -8;
+  const rotateY = ((x - centerX) / centerX) * 8;
+
+  card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  card.style.boxShadow = `
+    ${-rotateY * 2}px ${rotateX * 2}px 60px -15px rgba(0, 0, 0, 0.8),
+    0 0 80px -20px rgba(14, 165, 233, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15)
+  `;
+});
+
+wrapper.addEventListener('mouseleave', () => {
+  card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+  card.style.boxShadow = '0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 80px -20px rgba(14, 165, 233, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+});
+
+// ==========================================
+// ✨ FLOATING PARTICLES
+// ==========================================
+(function() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (6 + Math.random() * 8) + 's';
+    p.style.animationDelay = Math.random() * 10 + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+    const hue = 190 + Math.random() * 40;
+    p.style.background = `hsla(${hue}, 80%, 60%, ${0.3 + Math.random() * 0.3})`;
+    container.appendChild(p);
+  }
+})();
+
+// ==========================================
+// 🔐 LOGIN LOGIC (preserved)
+// ==========================================
+async function login() {
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+  const btn = document.getElementById("loginBtn");
+  const btnContent = document.getElementById("btnContent");
+  const btnLoader = document.getElementById("btnLoader");
+  const errorMsg = document.getElementById("errorMsg");
+
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  errorMsg.innerText = "";
+  errorMsg.style.color = "#ef4444";
+
+  if (!username || !password) {
+    errorMsg.innerText = "Please enter both username and password.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.style.opacity = "0.7";
+  btnContent.style.display = "none";
+  btnLoader.style.display = "block";
+
+  try {
+    const res = await fetch("http://localhost:3001/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      errorMsg.innerText = text;
+      resetBtn();
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.token) {
+      sessionStorage.setItem("token", data.token);
+      errorMsg.style.color = "#22c55e";
+      errorMsg.innerText = "Authentication successful. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 500);
+    } else {
+      errorMsg.innerText = "Invalid credentials.";
+      resetBtn();
+    }
+  } catch (err) {
+    console.error(err);
+    errorMsg.innerText = "Server unreachable. Please try again.";
+    resetBtn();
+  }
+
+  function resetBtn() {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btnContent.style.display = "inline-block";
+    btnLoader.style.display = "none";
+  }
+}
+
+document.getElementById("password").addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    login();
+  }
+});
+</script>
+
+</body>
+</html>

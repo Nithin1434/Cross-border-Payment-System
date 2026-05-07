@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFlow | Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020617;
+      --primary: #0ea5e9;
+      --primary-hover: #38bdf8;
+      --glass-bg: rgba(15, 23, 42, 0.35);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --success: #10b981;
+      --failed: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background: #020617;
+      color: white;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Top Navigation */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 40px;
+      background: rgba(2, 6, 23, 0.6);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, var(--primary));
+      background-size: 200% 200%;
+      animation: gradShift 4s ease infinite;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @keyframes gradShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .logo-icon {
+      -webkit-text-fill-color: initial;
+      font-size: 28px;
+      animation: iconBob 3s ease-in-out infinite;
+    }
+
+    @keyframes iconBob {
+      0%, 100% { transform: translateY(0) rotateZ(0deg); }
+      50% { transform: translateY(-4px) rotateZ(5deg); }
+    }
+
+    .nav-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .nav-btn {
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 20px -5px rgba(14, 165, 233, 0.3);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1020px;
+      margin: 30px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      flex: 1;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* 3D Glass Cards */
+    .card-3d {
+      perspective: 1000px;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--glass-border);
+      border-radius: 22px;
+      padding: 32px;
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, box-shadow 0.3s;
+      animation: cardSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 23px;
+      background: conic-gradient(from 0deg, transparent 60%, rgba(14,165,233,0.15), transparent 80%);
+      z-index: -1;
+      animation: borderSpin 8s linear infinite;
+    }
+
+    @keyframes borderSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .card:nth-child(2) { animation-delay: 0.1s; }
+
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateY(30px) rotateX(8deg); }
+      to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+    }
+
+    .card h2 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -0.3px;
+      transform: translateZ(20px);
+    }
+
+    /* Form */
+    .input-group { margin-bottom: 18px; }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.35);
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12), 0 0 20px -5px rgba(14,165,233,0.15);
+      transform: translateY(-1px);
+    }
+
+    /* 3D Buttons */
+    .primary-btn {
+      width: 100%;
+      padding: 16px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow:
+        0 6px 0 0 #3730a3,
+        0 10px 20px -5px rgba(14, 165, 233, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 0 0 #3730a3,
+        0 16px 30px -8px rgba(99, 102, 241, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .primary-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow:
+        0 3px 0 0 #3730a3,
+        0 5px 10px -3px rgba(14, 165, 233, 0.3);
+    }
+
+    .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .primary-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+      transform: skewX(-20deg);
+    }
+    .primary-btn:hover:not(:disabled)::after { animation: shine 1s; }
+
+    @keyframes shine { 100% { left: 200%; } }
+
+    /* 3D Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      perspective: 800px;
+    }
+
+    .metric-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-style: preserve-3d;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-box::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(14,165,233,0.08), transparent 60%);
+      pointer-events: none;
+    }
+
+    .metric-box:hover {
+      transform: translateY(-6px) rotateX(5deg) scale(1.02);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 15px 30px -8px rgba(14, 165, 233, 0.15);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: white;
+      transform: translateZ(15px);
+    }
+
+    .val-success { color: var(--success); }
+    .val-failed { color: var(--failed); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 24px;
+      border-radius: 16px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; }
+      .topbar { padding: 12px 16px; flex-direction: column; gap: 12px; }
+      .nav-buttons { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-icon">💸</span>
+    <span>PayFlow</span>
+    <div id="topBalBadge" style="margin-left: 16px; font-size: 13px; font-weight: 600; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 5px 14px; border-radius: 20px; -webkit-text-fill-color: initial;">
+      Balance: <span id="topBalance">...</span>
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="window.location.href='wallet.html'">👛 Wallet</button>
+    <button class="nav-btn" onclick="window.location.href='beneficiaries.html'">👥 Contacts</button>
+    <button class="nav-btn" onclick="window.location.href='transactions.html'">📄 Transactions</button>
+    <button class="nav-btn" onclick="window.location.href='failed.html'">❌ Failed</button>
+    <button class="nav-btn" style="background: rgba(14, 165, 233, 0.12); border-color: rgba(14, 165, 233, 0.3);" onclick="window.location.href='profile.html'">🧑‍🚀 Profile</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 💸 SWIFT SEND -->
+  <div class="card-3d">
+    <div class="card" data-tilt>
+      <h2><span>🚀</span> SWIFT Transfer</h2>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:11px; color:#64748b; font-weight:700; margin-bottom:6px; text-transform:uppercase;">Select Saved Beneficiary</label>
+        <select id="beneficiarySelect" onchange="fillBeneficiary(this.value)">
+          <option value="">-- Choose Account --</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="input-group">
+          <label>Recipient Full Name</label>
+          <input id="swiftName" placeholder="Full Legal Name">
+        </div>
+        <div class="input-group">
+          <label>IBAN / Account #</label>
+          <input id="swiftAccount" placeholder="Bank Account Number">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="input-group">
+          <label>SWIFT / BIC Code</label>
+          <input id="swiftBIC" placeholder="8-11 Chars">
+        </div>
+        <div class="input-group">
+          <label>Amount to Send</label>
+          <input id="amount" type="number" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="input-group">
+          <label>Destination Country</label>
+          <input id="swiftCountry" placeholder="e.g. USA, INDIA, UK">
+        </div>
+        <div class="input-group">
+          <label>Purpose of Transfer</label>
+          <select id="swiftPurpose">
+            <option value="Family Support">Family Support</option>
+            <option value="Business Service">Business Service</option>
+            <option value="Education/Tuition">Education/Tuition</option>
+            <option value="Savings/Investment">Savings/Investment</option>
+            <option value="Travel Expenses">Travel Expenses</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group" id="pinGroup" style="display:none;">
+        <label>2FA PIN (Required)</label>
+        <input id="swiftPin" type="password" placeholder="4-digit PIN" maxlength="4">
+      </div>
+
+      <button class="primary-btn" id="sendBtn" onclick="requestQuote()">
+        Preview SWIFT Transfer
+      </button>
+    </div>
+  </div>
+
+  <!-- 📊 METRICS -->
+  <div>
+    <div class="metrics-grid">
+      <div class="metric-box">
+        <div class="metric-label">Total Transactions</div>
+        <div class="metric-value" id="totalTx">...</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Total Sent</div>
+        <div class="metric-value" id="totalAmount">...</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Settled (Success)</div>
+        <div class="metric-value val-success" id="successTx">...</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Disputed (Failed)</div>
+        <div class="metric-value val-failed" id="failedTx">...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUOTE MODAL -->
+  <div id="quoteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; perspective:1000px;">
+    <div class="card" style="width: 400px; animation: modalPop 0.4s cubic-bezier(0.16,1,0.3,1);">
+      <h2><span>📝</span> Transfer Review</h2>
+      <div style="margin-bottom: 20px; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Recipient</div>
+          <div id="qRecipientInfo" style="color: white; font-weight: 600; font-size: 12px;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between"><span>Send Amount:</span><b id="qAmount" style="color:white"></b></div>
+        <div style="display:flex; justify-content:space-between"><span>Exchange Rate:</span><b id="qRate" style="color:white"></b></div>
+        <div style="display:flex; justify-content:space-between"><span>Platform Fee (1.5%):</span><b id="qFee" style="color:var(--failed)"></b></div>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;">
+        <div style="display:flex; justify-content:space-between"><span>Total Deducted:</span><b id="qTotal" style="color:white"></b></div>
+        <div style="display:flex; justify-content:space-between"><span>Recipient Gets:</span><b id="qReceive" style="color:var(--success); font-size: 17px"></b></div>
+      </div>
+      <div style="display:flex; gap: 10px;">
+        <button class="nav-btn" style="flex:1" onclick="document.getElementById('quoteModal').style.display='none'">Cancel</button>
+        <button class="primary-btn" style="flex:1; margin-top:0;" id="confirmBtn" onclick="sendMoney()">Confirm Transfer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ==========================================
+// 🌐 THREE.JS — FLOWING PARTICLE FIELD
+// ==========================================
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  camera.position.z = 5;
+
+  const count = 800;
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 10;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+    velocities.push({ x: (Math.random() - 0.5) * 0.003, y: (Math.random() - 0.5) * 0.003, z: (Math.random() - 0.5) * 0.002 });
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0x0ea5e9, size: 0.025, transparent: true, opacity: 0.5 });
+  const particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  let scrollY = 0;
+  window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const pos = geo.attributes.position.array;
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] += velocities[i].x;
+      pos[i * 3 + 1] += velocities[i].y;
+      pos[i * 3 + 2] += velocities[i].z;
+      if (Math.abs(pos[i * 3]) > 5) velocities[i].x *= -1;
+      if (Math.abs(pos[i * 3 + 1]) > 4) velocities[i].y *= -1;
+      if (Math.abs(pos[i * 3 + 2]) > 3) velocities[i].z *= -1;
+    }
+    geo.attributes.position.needsUpdate = true;
+    camera.position.y = -scrollY * 0.001;
+    particles.rotation.y += 0.0003;
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+
+// ==========================================
+// 🃏 3D CARD TILT
+// ==========================================
+document.querySelectorAll('[data-tilt]').forEach(card => {
+  const wrapper = card.closest('.card-3d') || card.parentElement;
+  wrapper.addEventListener('mousemove', (e) => {
+    const rect = wrapper.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y - rect.height / 2) / rect.height) * -6;
+    const rotateY = ((x - rect.width / 2) / rect.width) * 6;
+    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  });
+  wrapper.addEventListener('mouseleave', () => {
+    card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+  });
+});
+
+// Metric spotlight follow
+document.querySelectorAll('.metric-box').forEach(box => {
+  box.addEventListener('mousemove', (e) => {
+    const rect = box.getBoundingClientRect();
+    box.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width * 100) + '%');
+    box.style.setProperty('--my', ((e.clientY - rect.top) / rect.height * 100) + '%');
+  });
+});
+
+// ==========================================
+// 📡 APP LOGIC (preserved)
+// ==========================================
+const token = sessionStorage.getItem("token");
+if (!token) window.location.href = "index.html";
+
+function logout() {
+  sessionStorage.removeItem("token");
+  window.location.href = "index.html";
+}
+
+let toastTimeout;
+function showToast(msg, bg="#22c55e") {
+  const toast = document.getElementById("toast");
+  toast.innerHTML = msg;
+  toast.style.borderLeft = `4px solid ${bg}`;
+  toast.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.classList.remove("show"); }, 3000);
+}
+
+let beneficiaries = [];
+async function loadDashboard() {
+  try {
+    const res = await fetch("http://localhost:3001/transactions", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    let totalAmount = 0, success = 0, failed = 0;
+    data.forEach(tx => {
+      totalAmount += tx.amount || 0;
+      if ((tx.status || "").toUpperCase() === "SUCCESS") success++;
+      else if ((tx.status || "").toUpperCase() === "FAILED") failed++;
+    });
+
+    document.getElementById("totalTx").innerText = data.length;
+    document.getElementById("totalAmount").innerText = totalAmount.toLocaleString(undefined, {maximumFractionDigits:2}) + " " + (data[0]?.currency || "USD");
+    document.getElementById("successTx").innerText = success;
+    document.getElementById("failedTx").innerText = failed;
+
+    const meRes = await fetch("http://localhost:3001/me", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      document.getElementById("topBalance").innerText = meData.balance.toLocaleString(undefined, {maximumFractionDigits:2}) + " " + meData.currency;
+      document.getElementById("pinGroup").style.display = meData.twoFaEnabled ? "block" : "none";
+    }
+
+    const bRes = await fetch("http://localhost:3001/beneficiaries", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (bRes.ok) {
+      beneficiaries = await bRes.json();
+      const select = document.getElementById("beneficiarySelect");
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">-- Choose Account --</option>';
+      beneficiaries.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b._id;
+        opt.innerText = `${b.fullName || "Beneficiary"} (${b.swiftCode || "N/A"})`;
+        select.appendChild(opt);
+      });
+      select.value = currentVal;
+    }
+  } catch (err) { console.error(err); }
+}
+
+function fillBeneficiary(id) {
+  const b = beneficiaries.find(x => x._id === id);
+  if (!b) return;
+  document.getElementById("swiftName").value = b.fullName || "";
+  document.getElementById("swiftAccount").value = b.accountNumber || "";
+  document.getElementById("swiftBIC").value = b.swiftCode || "";
+  document.getElementById("swiftCountry").value = b.country || "";
+}
+
+async function requestQuote() {
+  const name = document.getElementById("swiftName").value;
+  const acct = document.getElementById("swiftAccount").value;
+  const bic = document.getElementById("swiftBIC").value;
+  const country = document.getElementById("swiftCountry").value;
+  const btn = document.getElementById("sendBtn");
+  const amountVal = Number(document.getElementById("amount").value);
+
+  if (isNaN(amountVal) || amountVal <= 0 || !bic || !acct) {
+    showToast("⚠️ Invalid recipient details or amount", "var(--failed)");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = "Calculating...";
+
+  try {
+    const res = await fetch("http://localhost:3001/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({ amount: amountVal, targetCountry: country })
+    });
+
+    if (!res.ok) {
+      showToast("❌ " + await res.text(), "var(--failed)");
+      throw new Error("Failed");
+    }
+
+    const data = await res.json();
+    document.getElementById("qRecipientInfo").innerText = `${name}\n${acct}\n${bic}\n${country}`;
+    document.getElementById("qAmount").innerText = data.baseAmount + " " + data.currency;
+    document.getElementById("qRate").innerText = data.rate;
+    document.getElementById("qFee").innerText = data.platformFee.toFixed(2) + " " + data.currency;
+    document.getElementById("qTotal").innerText = data.totalAmountDeducted.toFixed(2) + " " + data.currency;
+    document.getElementById("qReceive").innerText = data.receivedAmount.toFixed(2) + " " + data.targetCurrency;
+    document.getElementById("quoteModal").style.display = "flex";
+  } catch (err) {}
+
+  btn.disabled = false;
+  btn.innerHTML = "Preview SWIFT Transfer";
+}
+
+async function sendMoney() {
+  const name = document.getElementById("swiftName").value;
+  const acct = document.getElementById("swiftAccount").value;
+  const bic = document.getElementById("swiftBIC").value;
+  const country = document.getElementById("swiftCountry").value;
+  const amountInput = document.getElementById("amount");
+  const confirmBtn = document.getElementById("confirmBtn");
+
+  confirmBtn.disabled = true;
+  confirmBtn.innerHTML = "Processing...";
+
+  try {
+    const res = await fetch("http://localhost:3001/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({
+        recipientName: name,
+        recipientAccountNumber: acct,
+        recipientSwiftCode: bic,
+        recipientAddress: country,
+        amount: Number(amountInput.value),
+        pin: document.getElementById("swiftPin").value,
+        reason: document.getElementById("swiftPurpose").value
+      })
+    });
+
+    if (!res.ok) {
+      showToast("❌ " + await res.text(), "var(--failed)");
+      throw new Error("Failed");
+    }
+
+    document.getElementById("quoteModal").style.display = "none";
+    showToast("🕒 SWIFT Batch Processing...", "#facc15");
+    document.getElementById("swiftName").value = "";
+    document.getElementById("swiftAccount").value = "";
+    document.getElementById("swiftBIC").value = "";
+    document.getElementById("swiftCountry").value = "";
+    amountInput.value = "";
+
+    setTimeout(() => {
+      loadDashboard();
+      showToast("✅ Funds Dispatched!", "var(--success)");
+    }, 3000);
+  } catch {}
+
+  confirmBtn.disabled = false;
+  confirmBtn.innerHTML = "Confirm Transfer";
+}
+
+setInterval(loadDashboard, 6000);
+loadDashboard();
+
+const swiftPay = sessionStorage.getItem("swiftPayTo");
+if (swiftPay) {
+  try {
+    const b = JSON.parse(swiftPay);
+    document.getElementById("swiftName").value = b.fullName || b.username || "";
+    document.getElementById("swiftAccount").value = b.accountNumber || "";
+    document.getElementById("swiftBIC").value = b.swiftCode || "";
+    document.getElementById("swiftCountry").value = b.country || "";
+  } catch(e) {}
+  sessionStorage.removeItem("swiftPayTo");
+}
+</script>
+</body>
+</html>

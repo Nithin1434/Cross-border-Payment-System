@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFlow | Actions Required</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020617;
+      --primary: #f87171;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --warning: #facc15;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #020617;
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Reddish Mesh for Warning Context */
+    .mesh-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
+    .mesh-blob { position: absolute; border-radius: 50%; filter: blur(140px); animation: float 15s infinite ease-in-out alternate; opacity: 0.3; }
+    .mesh-1 { background: linear-gradient(135deg, #ef4444, #b91c1c); width: 600px; height: 600px; top: -100px; right: -100px; }
+    .mesh-2 { background: linear-gradient(135deg, #f59e0b, #d97706); width: 500px; height: 500px; bottom: -100px; left: -50px; animation-delay: -5s; }
+    @keyframes float { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -40px) scale(1.05); } 100% { transform: translate(-20px, 30px) scale(0.95); } }
+
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; padding: 20px 40px;
+      background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 50;
+    }
+    .header-title {
+      display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 800;
+      color: #fca5a5;
+    }
+    .nav-btn {
+      padding: 10px 18px; border-radius: 10px; border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05); color: white; font-weight: 600; cursor: pointer;
+      transition: all 0.3s; font-size: 13px;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateY(-2px); }
+    .btn-logout { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+
+    .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+
+    #list { display: flex; flex-direction: column; gap: 16px; }
+
+    .tx-card {
+      background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(25px);
+      border: 1px solid rgba(239, 68, 68, 0.2); border-left: 5px solid var(--primary);
+      border-radius: 20px; padding: 24px 30px;
+      display: flex; justify-content: space-between; align-items: center;
+      animation: slideIn 0.6s ease-out backwards;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+    .tx-info { display: flex; flex-direction: column; gap: 6px; }
+    .tx-desc { font-size: 16px; font-weight: 700; color: #fca5a5; }
+    .tx-amount { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+
+    .retry-btn {
+      padding: 12px 24px; border-radius: 14px; border: none;
+      background: linear-gradient(135deg, var(--warning), #eab308);
+      color: #000; font-weight: 800; font-size: 14px; cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 6px 20px -5px rgba(250, 204, 21, 0.4);
+    }
+    .retry-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(250, 204, 21, 0.6); }
+    .retry-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .empty { text-align: center; margin-top: 100px; }
+    .empty h3 { font-size: 24px; margin-bottom: 10px; }
+    .empty p { color: #64748b; font-weight: 500; }
+
+    @media (max-width: 600px) { .tx-card { flex-direction: column; align-items: flex-start; gap: 20px; } .retry-btn { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<div class="mesh-bg">
+  <div class="mesh-blob mesh-1"></div>
+  <div class="mesh-blob mesh-2"></div>
+</div>
+
+<div class="topbar">
+  <div class="header-title"><span>⚠️</span> Actions Required</div>
+  <div style="display:flex; gap:10px;">
+    <button class="nav-btn" onclick="window.location.href='home.html'">⬅ Dashboard</button>
+    <button class="nav-btn btn-logout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="list"></div>
+</div>
+
+<script>
+const token = sessionStorage.getItem("token");
+if (!token) window.location.href = "index.html";
+
+function logout() { sessionStorage.removeItem("token"); window.location.href = "index.html"; }
+
+async function loadFailed() {
+  try {
+    const res = await fetch("http://localhost:3001/failed", { headers: { "Authorization": "Bearer " + token } });
+    const data = await res.json();
+    const list = document.getElementById("list");
+
+    if (!data || data.length === 0) {
+      list.innerHTML = `
+        <div class="empty">
+          <h3>No issues found! 🎉</h3>
+          <p>All your transactions are processing or completed.</p>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = "";
+    data.forEach((tx, i) => {
+      const card = document.createElement('div');
+      card.className = 'tx-card';
+      card.style.animationDelay = `${i * 0.08}s`;
+      card.innerHTML = `
+        <div class="tx-info">
+          <div class="tx-desc">To Destination: <strong>@${tx.to}</strong></div>
+          <div class="tx-amount">${tx.amount.toLocaleString()} ${tx.currency || 'USD'}</div>
+        </div>
+        <button class="retry-btn">Retry Transfer 🔄</button>
+      `;
+      const btn = card.querySelector('button');
+      btn.onclick = () => retry(tx, btn);
+      list.appendChild(card);
+    });
+  } catch (err) { console.error(err); }
+}
+
+async function retry(tx, btn) {
+  btn.disabled = true;
+  btn.innerText = "Retrying...";
+  try {
+    const res = await fetch("http://localhost:3001/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(tx)
+    });
+    if (res.ok) {
+        btn.style.background = "#22c55e";
+        btn.style.color = "#fff";
+        btn.innerText = "Re-Queued ✅";
+        setTimeout(() => loadFailed(), 1500);
+    } else { alert("Insufficient funds or server error during retry."); btn.disabled = false; btn.innerText = "Retry Transfer 🔄"; }
+  } catch (e) { alert("Server error."); btn.disabled = false; btn.innerText = "Retry Transfer 🔄"; }
+}
+
+loadFailed();
+</script>
+</body>
+</html>

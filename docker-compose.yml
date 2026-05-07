@@ -1,0 +1,51 @@
+version: '3'
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports: ["27017:27017"]
+    volumes: ["mongo_data:/data/db"]
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+
+  zookeeper:
+    image: zookeeper:3.9.2
+    container_name: zookeeper
+    environment: [ZOO_MY_ID=1]
+
+  kafka:
+    image: wurstmeister/kafka:2.13-2.8.1
+    container_name: kafka
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+
+  currency-service:
+    build: ./currency-service
+    container_name: currency-service
+    environment: ["MONGO_URI=mongodb://mongodb:27017/payments?replicaSet=rs0", "PORT=3002"]
+    depends_on: [mongodb]
+
+  transaction-service:
+    build: ./transaction-service
+    container_name: transaction-service
+    ports: ["3001:3001"]
+    environment: ["MONGO_URI=mongodb://mongodb:27017/payments?replicaSet=rs0", "KAFKA_BROKERS=kafka:9092", "CURRENCY_SERVICE_URL=http://currency-service:3002", "JWT_SECRET=secret", "PORT=3001"]
+    depends_on: [mongodb, kafka]
+
+  worker-service:
+    build: ./worker-service
+    container_name: worker-service
+    environment: ["MONGO_URI=mongodb://mongodb:27017/payments?replicaSet=rs0", "KAFKA_BROKERS=kafka:9092"]
+    depends_on: [mongodb, kafka]
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports: ["80:80"]
+    volumes: ["./frontend:/usr/share/nginx/html:ro"]
+    depends_on: [transaction-service]
+
+volumes:
+  mongo_data:
