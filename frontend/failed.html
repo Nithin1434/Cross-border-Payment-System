@@ -110,7 +110,7 @@ function logout() { sessionStorage.removeItem("token"); window.location.href = "
 
 async function loadFailed() {
   try {
-    const res = await fetch("http://localhost:3001/failed", { headers: { "Authorization": "Bearer " + token } });
+    const res = await fetch("https://payflow-transaction-service.onrender.com/failed", { headers: { "Authorization": "Bearer " + token } });
     const data = await res.json();
     const list = document.getElementById("list");
 
@@ -147,7 +147,7 @@ async function retry(tx, btn) {
   btn.disabled = true;
   btn.innerText = "Retrying...";
   try {
-    const res = await fetch("http://localhost:3001/transfer", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/transfer", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify(tx)

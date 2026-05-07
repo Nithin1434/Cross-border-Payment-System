@@ -144,7 +144,7 @@ function showToast(msg, bg="#22c55e") {
 
 async function loadBalance() {
   try {
-    const res = await fetch("http://localhost:3001/me", { headers: { Authorization: "Bearer " + token } });
+    const res = await fetch("https://payflow-transaction-service.onrender.com/me", { headers: { Authorization: "Bearer " + token } });
     const data = await res.json();
     document.getElementById("topBalance").innerText = data.balance.toLocaleString() + " " + data.currency;
     document.getElementById("amtLabel").innerText = `Amount (${data.currency})`;
@@ -157,7 +157,7 @@ async function depositFunds() {
   const btn = document.getElementById("depBtn");
   btn.disabled = true; btn.innerText = "Processing...";
   try {
-    const res = await fetch("http://localhost:3001/deposit", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/deposit", {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ amount })
     });

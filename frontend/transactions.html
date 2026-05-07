@@ -168,7 +168,7 @@ async function loadTransactions() {
   try {
     const search = document.getElementById('searchInput').value;
     const status = document.getElementById('statusFilter').value;
-    let url = `http://localhost:3001/transactions?status=${status}`;
+    let url = `https://payflow-transaction-service.onrender.com/transactions?status=${status}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     const res = await fetch(url, { headers: { "Authorization": "Bearer " + token } });
@@ -236,7 +236,7 @@ function showReceipt(tx) {
 
 async function exportCSV() {
   try {
-    const res = await fetch("http://localhost:3001/transactions/export", { headers: { "Authorization": "Bearer " + token } });
+    const res = await fetch("https://payflow-transaction-service.onrender.com/transactions/export", { headers: { "Authorization": "Bearer " + token } });
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

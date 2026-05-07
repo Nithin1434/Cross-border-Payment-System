@@ -380,7 +380,7 @@ function showModalError(id, msg) {
 // =======================
 async function loadProfile() {
   try {
-    const meRes = await fetch("http://localhost:3001/me", { headers: { Authorization: "Bearer " + token } });
+    const meRes = await fetch("https://payflow-transaction-service.onrender.com/me", { headers: { Authorization: "Bearer " + token } });
     if (!meRes.ok) { logout(); return; }
     const user = await meRes.json();
 
@@ -422,7 +422,7 @@ async function loadProfile() {
     }
 
     // Load stats
-    const stRes = await fetch("http://localhost:3001/profile/stats", { headers: { Authorization: "Bearer " + token } });
+    const stRes = await fetch("https://payflow-transaction-service.onrender.com/profile/stats", { headers: { Authorization: "Bearer " + token } });
     if (stRes.ok) {
       const st = await stRes.json();
       document.getElementById("totalSent").innerText     = userSymbol + (st.totalSent || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) + " " + userCurrency;
@@ -451,7 +451,7 @@ async function changePassword() {
   if (nw.length < 6) return showModalError("pwError", "New password must be at least 6 characters.");
 
   try {
-    const res = await fetch("http://localhost:3001/change-password", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/change-password", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ currentPassword: cur, newPassword: nw })
@@ -477,7 +477,7 @@ async function setup2FA() {
   const pin = String(document.getElementById("newPin").value).trim();
   if (pin.length !== 4 || isNaN(Number(pin))) return showModalError("pinSetupError", "PIN must be exactly 4 digits.");
   try {
-    const res = await fetch("http://localhost:3001/2fa/setup", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/2fa/setup", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ pin })
@@ -494,7 +494,7 @@ async function disable2FA() {
   const pin = String(document.getElementById("disablePin").value).trim();
   if (!pin) return showModalError("pinDisableError", "Enter your PIN.");
   try {
-    const res = await fetch("http://localhost:3001/2fa/disable", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/2fa/disable", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ pin })
@@ -531,7 +531,7 @@ let lastTxCount = 0;
 async function checkForNewTransactions() {
   if (Notification.permission !== "granted") return;
   try {
-    const res = await fetch("http://localhost:3001/transactions", { headers: { Authorization: "Bearer " + token } });
+    const res = await fetch("https://payflow-transaction-service.onrender.com/transactions", { headers: { Authorization: "Bearer " + token } });
     if (!res.ok) return;
     const txs = await res.json();
     const credits = txs.filter(t => t.type === "CREDIT" && t.status === "SUCCESS");
@@ -575,7 +575,7 @@ async function uploadPic(e) {
     const base64 = reader.result;
     document.getElementById("avatarEmoji").innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
     try {
-      await fetch("http://localhost:3001/profile/upload", {
+      await fetch("https://payflow-transaction-service.onrender.com/profile/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
         body: JSON.stringify({ profilePic: base64 })

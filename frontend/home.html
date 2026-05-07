@@ -582,7 +582,7 @@ function showToast(msg, bg="#22c55e") {
 let beneficiaries = [];
 async function loadDashboard() {
   try {
-    const res = await fetch("http://localhost:3001/transactions", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/transactions", {
       headers: { Authorization: "Bearer " + token }
     });
     if (!res.ok) return;
@@ -600,7 +600,7 @@ async function loadDashboard() {
     document.getElementById("successTx").innerText = success;
     document.getElementById("failedTx").innerText = failed;
 
-    const meRes = await fetch("http://localhost:3001/me", {
+    const meRes = await fetch("https://payflow-transaction-service.onrender.com/me", {
       headers: { Authorization: "Bearer " + token }
     });
     if (meRes.ok) {
@@ -609,7 +609,7 @@ async function loadDashboard() {
       document.getElementById("pinGroup").style.display = meData.twoFaEnabled ? "block" : "none";
     }
 
-    const bRes = await fetch("http://localhost:3001/beneficiaries", {
+    const bRes = await fetch("https://payflow-transaction-service.onrender.com/beneficiaries", {
       headers: { Authorization: "Bearer " + token }
     });
     if (bRes.ok) {
@@ -654,7 +654,7 @@ async function requestQuote() {
   btn.innerHTML = "Calculating...";
 
   try {
-    const res = await fetch("http://localhost:3001/quote", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/quote", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ amount: amountVal, targetCountry: country })
@@ -691,7 +691,7 @@ async function sendMoney() {
   confirmBtn.innerHTML = "Processing...";
 
   try {
-    const res = await fetch("http://localhost:3001/transfer", {
+    const res = await fetch("https://payflow-transaction-service.onrender.com/transfer", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({
