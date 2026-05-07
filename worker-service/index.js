@@ -59,7 +59,7 @@ const Transaction = mongoose.model('Transaction', new mongoose.Schema({
 const kafka = new Kafka({
   clientId: 'worker',
   brokers: [process.env.KAFKA_BROKERS || '127.0.0.1:9092'],
-  ssl: process.env.KAFKA_SASL_USERNAME ? true : false,
+  ssl: process.env.KAFKA_SASL_USERNAME ? { rejectUnauthorized: false } : false,
   sasl: process.env.KAFKA_SASL_USERNAME ? {
     mechanism: 'plain',
     username: process.env.KAFKA_SASL_USERNAME,
