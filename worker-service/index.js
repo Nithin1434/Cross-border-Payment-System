@@ -80,78 +80,61 @@ const consumer = kafka.consumer({ groupId: 'payment-group-v6' });
 // 🚀 PROCESS FUNCTION (Atomic Settlement)
 // =======================
 async function processTransaction(data) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  console.log(`📥 Processing Transaction: ${data.txId} (${data.amount} ${data.currency})`);
 
   try {
-    const tx = await Transaction.findOne({ txId: data.txId, type: "DEBIT" }).session(session);
+    const tx = await Transaction.findOne({ txId: data.txId, type: "DEBIT" });
 
     if (!tx || tx.status === "SUCCESS") {
       console.log("⚠️ Already processed or missing:", data.txId);
-      await session.abortTransaction();
-      session.endSession();
       return;
     }
 
-    // Simulate Processing Delay for Realism 🕒
-    await new Promise(res => setTimeout(res, 2000));
-
-    // 🔍 find receiver and sender inside session
-    const receiver = await User.findOne({ username: data.to }).session(session);
-    const sender = await User.findById(data.userId).session(session);
+    // 🔍 find receiver and sender
+    const receiver = await User.findOne({ username: data.to });
+    const sender = await User.findById(data.userId);
 
     if (!sender || sender.balance < data.amount) {
-      console.log(`⚠️ Insufficient balance for transaction: ${data.txId}`);
-      await Transaction.updateOne({ txId: data.txId, type: "DEBIT" }, { status: "FAILED" }).session(session);
-      await session.commitTransaction(); // Commit the FAILED status
-      session.endSession();
+      console.log(`❌ FAILED: Insufficient balance for ${data.txId}`);
+      await Transaction.updateOne({ txId: data.txId, type: "DEBIT" }, { status: "FAILED" });
       return;
     }
 
     // 💸 Deduct sender
-    await User.updateOne({ _id: data.userId }, { $inc: { balance: -data.amount } }).session(session);
+    await User.updateOne({ _id: data.userId }, { $inc: { balance: -data.amount } });
     
     // 👉 Update DEBIT to SUCCESS
-    tx.status = "SUCCESS";
-    await tx.save({ session });
+    await Transaction.updateOne({ txId: data.txId, type: "DEBIT" }, { status: "SUCCESS" });
 
     // 👉 receiver (internal or external)
     if (receiver) {
         // 👉 Internal receiver (CREDIT)
-        await Transaction.create([{
+        await Transaction.create({
             ...data,
             type: "CREDIT",
             userId: receiver._id,
             status: "SUCCESS"
-        }], { session });
+        });
 
         // 💰 credit receiver
-        await User.updateOne({ _id: receiver._id }, { $inc: { balance: data.convertedAmount } }).session(session);
-        console.log(`✅ INTERNAL SETTLED: -${data.amount} ${data.currency} from ${sender.username}, +${data.convertedAmount} ${data.convertedCurrency} to ${receiver.username}`);
+        await User.updateOne({ _id: receiver._id }, { $inc: { balance: data.convertedAmount } });
+        console.log(`✅ SETTLED: -${data.amount} to +${data.convertedAmount} (Internal)`);
     } else {
-        // SWIFT External
-        console.log(`✅ SWIFT EXTERNAL SETTLED: -${data.amount} ${data.currency} from ${sender.username}`);
+        console.log(`✅ SETTLED: -${data.amount} (External SWIFT)`);
     }
 
-    await session.commitTransaction();
-    session.endSession();
-    
-    // Notifications (Outside Transaction for performance, if they fail it's okay)
-    console.log(`[NotificationEngine] 📲 Notifications dispatched for ${data.txId}`);
+    console.log(`📲 Notifications dispatched for ${data.txId}`);
 
   } catch (err) {
     console.error("❌ Settlement Error:", err);
-    await session.abortTransaction();
-    session.endSession();
-
+    
     data.retries = (data.retries || 0) + 1;
-    if (data.retries <= 3) {
-      console.log(`🔄 Retrying settle (${data.retries}/3)...`);
-      await new Promise(r => setTimeout(r, 3000));
+    if (data.retries <= 2) {
+      console.log(`🔄 Retrying settle (${data.retries}/2)...`);
+      await new Promise(r => setTimeout(r, 2000));
       return processTransaction(data);
     }
 
-    // Hard fail after retries
     await Transaction.updateOne({ txId: data.txId, type: "DEBIT" }, { status: "FAILED" });
     console.log("❌ TX MARKED FAILED AFTER RETRIES");
   }
