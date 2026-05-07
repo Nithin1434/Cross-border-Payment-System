@@ -74,7 +74,7 @@ const kafka = new Kafka({
   } : undefined
 });
 
-const consumer = kafka.consumer({ groupId: 'payment-group-v6' });
+const consumer = kafka.consumer({ groupId: 'payment-group-final-v1' });
 
 // =======================
 // 🚀 PROCESS FUNCTION (Atomic Settlement)
@@ -146,7 +146,7 @@ async function processTransaction(data) {
 async function run() {
   await consumer.connect();
   console.log("Kafka Connected ✅");
-  await consumer.subscribe({ topic: 'transactions', fromBeginning: false });
+  await consumer.subscribe({ topic: 'transactions', fromBeginning: true });
   await consumer.run({
     eachMessage: async ({ message }) => {
       try {
