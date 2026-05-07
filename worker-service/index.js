@@ -1,6 +1,13 @@
 require('dotenv').config();
+const express = require('express');
 const { Kafka } = require('kafkajs');
 const mongoose = require('mongoose');
+
+const app = express();
+const port = process.env.PORT || 10000;
+
+app.get('/', (req, res) => res.send('Worker is alive! 🚀'));
+app.listen(port, () => console.log(`Worker heartbeat listening on port ${port}`));
 
 // =======================
 // ✅ MongoDB (Replica Set required for Transactions)
